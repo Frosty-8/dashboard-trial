@@ -306,7 +306,26 @@ function renderSuppliers(suppliers) {
 
     table.innerHTML = "";
 
-    if (!suppliers || suppliers.length === 0) {
+
+    /*
+     * Backend response:
+     *
+     * suppliers = {
+     *     performance: [...]
+     * }
+     *
+     * Extract the actual supplier list.
+     */
+
+    const supplierList =
+        Array.isArray(suppliers)
+            ? suppliers
+            : Array.isArray(suppliers?.performance)
+                ? suppliers.performance
+                : [];
+
+
+    if (supplierList.length === 0) {
 
         table.innerHTML = `
             <tr>
@@ -320,12 +339,13 @@ function renderSuppliers(suppliers) {
     }
 
 
-    suppliers
+    supplierList
         .slice(0, 10)
         .forEach(supplier => {
 
             const row =
                 document.createElement("tr");
+
 
             row.innerHTML = `
                 <td>

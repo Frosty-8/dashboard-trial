@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import traceback
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
@@ -86,32 +87,73 @@ def process_report():
     uploaded_file.save(destination)
 
     try:
+        print("\n" + "=" * 70)
+        print("SAP PPC PROCESSING")
+        print("=" * 70)
+
+        print(f"Uploaded filename : {filename}")
+        print(f"Extension         : {extension}")
+        print(f"Destination       : {destination}")
+        print(f"Destination exists: {destination.exists()}")
+        print(f"Destination type  : {type(destination)}")
 
         pipeline = PPCPipeline()
 
-        # Run the complete pipeline and save
-        # the canonical dataset.
-        result = pipeline.run_and_save(
-            destination,
-            output_path=(
-                PROCESSED_DIR / "ppc_clean.parquet"
-            ),
+        print("\n[1/2] Running pipeline...")
+
+        result = pipeline.run(
+            file_path=destination,
             sheet_name="PPC Report",
         )
+
+        print("[2/2] Saving transformed dataset...")
+
+        output_path = (
+            PROCESSED_DIR / "ppc_clean.parquet"
+        )
+
+        result.transformed.write_parquet(
+            output_path
+        )
+
+        print(f"Output path       : {output_path}")
+        print(f"Output exists     : {output_path.exists()}")
+
+        print("=" * 70)
+        print("PROCESSING SUCCESS")
+        print("=" * 70)
 
         return jsonify(
             {
                 "success": True,
                 "message": "Report processed successfully.",
+                "filename": filename,
+                "rows": result.transformed.height,
+                "columns": result.transformed.width,
+                "output": str(output_path),
                 "redirect": "/",
             }
         )
 
     except Exception as exc:
 
+        print("\n" + "=" * 70)
+        print("PROCESSING FAILED")
+        print("=" * 70)
+
+        print(f"Exception type : {type(exc).__name__}")
+        print(f"Exception      : {exc}")
+
+        print("\nTRACEBACK:")
+        traceback.print_exc()
+
+        print("=" * 70)
+
         return jsonify(
             {
                 "success": False,
+                "error_type": type(exc).__name__,
                 "message": str(exc),
+                "traceback": traceback.format_exc(),
             }
         ), 500

@@ -1,5 +1,3 @@
-# app/routes/upload.py
-
 from __future__ import annotations
 
 from flask import Blueprint, render_template
@@ -11,8 +9,6 @@ upload_bp = Blueprint(
 )
 
 
-@upload_bp.get("/")
-def index():
-    return render_template(
-        "upload.html"
-    )
+@upload_bp.get("/upload")
+def upload_page():
+    return render_template("upload.html")
