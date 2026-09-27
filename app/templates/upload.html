@@ -1,345 +1,964 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>SAP PPC Intelligence - Upload</title>
+    <title>SAP Intelligence | Workbook Analyzer</title>
 
     <style>
-
         * {
             box-sizing: border-box;
         }
 
         body {
             margin: 0;
-
-            min-height: 100vh;
-
-            display: grid;
-            place-items: center;
-
+            font-family: Inter, Arial, sans-serif;
             background: #f5f7fb;
-
-            font-family:
-                Inter,
-                system-ui,
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
-            color: #111827;
+            color: #172033;
         }
 
         .container {
-            width: min(560px, calc(100% - 32px));
-
-            background: white;
-
-            border: 1px solid #e5e7eb;
-
-            border-radius: 18px;
-
-            padding: 42px;
-
-            box-shadow:
-                0 20px 50px rgba(15, 23, 42, 0.08);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
         }
 
-        .logo {
-            width: 48px;
-            height: 48px;
-
-            display: grid;
-            place-items: center;
-
-            border-radius: 12px;
-
-            background: #2563eb;
-
-            color: white;
-
-            font-weight: 800;
-
-            margin-bottom: 22px;
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
         }
 
-        .eyebrow {
-            color: #2563eb;
-
-            font-size: 11px;
-
-            font-weight: 800;
-
-            letter-spacing: 0.12em;
-
-            margin-bottom: 8px;
-        }
-
-        h1 {
+        .brand h1 {
             margin: 0;
-
             font-size: 28px;
-
-            letter-spacing: -0.03em;
         }
 
-        .subtitle {
-            color: #6b7280;
-
-            font-size: 14px;
-
-            line-height: 1.6;
-
-            margin: 10px 0 30px;
+        .brand p {
+            margin: 6px 0 0;
+            color: #697386;
         }
 
-        .upload-box {
-            border: 2px dashed #d1d5db;
+        .dashboard-link {
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            background: #172033;
+            color: white;
+        }
 
+        .upload-card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid #e3e7ef;
+            margin-bottom: 28px;
+        }
+
+        .drop-zone {
+            border: 2px dashed #cbd3df;
             border-radius: 14px;
-
-            padding: 35px 20px;
-
+            padding: 50px 20px;
             text-align: center;
-
+            cursor: pointer;
             transition: 0.2s;
         }
 
-        .upload-box:hover {
+        .drop-zone:hover,
+        .drop-zone.active {
             border-color: #2563eb;
-
-            background: #f8fbff;
+            background: #f7faff;
         }
 
-        input[type="file"] {
-            width: 100%;
+        .drop-zone h2 {
+            margin: 0 0 8px;
+        }
 
-            margin-bottom: 20px;
+        .drop-zone p {
+            color: #697386;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .file-name {
+            margin-top: 18px;
+            font-weight: 600;
+        }
+
+        .actions {
+            margin-top: 22px;
+            display: flex;
+            gap: 12px;
         }
 
         button {
-            width: 100%;
-
-            padding: 13px;
-
             border: 0;
-
-            border-radius: 9px;
-
-            background: #2563eb;
-
-            color: white;
-
-            font-size: 14px;
-
-            font-weight: 700;
-
+            border-radius: 8px;
+            padding: 12px 20px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
         }
 
-        button:hover {
-            background: #1d4ed8;
+        .primary {
+            background: #2563eb;
+            color: white;
         }
 
-        button:disabled {
-            opacity: 0.6;
+        .primary:disabled {
+            background: #aab4c5;
+            cursor: not-allowed;
+        }
 
-            cursor: wait;
+        .secondary {
+            background: #eef1f6;
+            color: #172033;
         }
 
         .status {
             margin-top: 18px;
+            padding: 14px;
+            border-radius: 8px;
+            display: none;
+        }
 
-            color: #6b7280;
+        .status.show {
+            display: block;
+        }
 
+        .status.loading {
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        .status.success {
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        #results {
+            display: none;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .metric {
+            background: white;
+            border: 1px solid #e3e7ef;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .metric-label {
+            color: #697386;
             font-size: 13px;
-
-            text-align: center;
+            margin-bottom: 8px;
         }
 
-        .error {
-            color: #dc2626;
+        .metric-value {
+            font-size: 25px;
+            font-weight: 700;
         }
 
+        .section {
+            background: white;
+            border: 1px solid #e3e7ef;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section h2 {
+            margin-top: 0;
+        }
+
+        .sheet-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .sheet {
+            border: 1px solid #e1e6ef;
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sheet-name {
+            font-weight: 700;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 5px 8px;
+            border-radius: 20px;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+
+        .sheet-meta {
+            margin-top: 10px;
+            color: #697386;
+            font-size: 13px;
+        }
+
+        .join {
+            padding: 14px;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .join:last-child {
+            border-bottom: 0;
+        }
+
+        .join-key {
+            font-weight: 700;
+        }
+
+        .join-confidence {
+            color: #047857;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .integration-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .integration-table th,
+        .integration-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #edf0f5;
+        }
+
+        .selected {
+            color: #047857;
+            font-weight: 700;
+        }
+
+        .not-selected {
+            color: #697386;
+        }
+
+        .empty {
+            color: #697386;
+            padding: 15px 0;
+        }
+
+        @media (max-width: 900px) {
+            .summary-grid,
+            .sheet-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 18px;
+            }
+        }
     </style>
-
 </head>
-
 
 <body>
 
-    <main class="container">
+<div class="container">
 
-        <div class="logo">
-            SP
+    <div class="header">
+        <div class="brand">
+            <h1>SAP Intelligence</h1>
+            <p>Workbook analysis & procurement intelligence</p>
         </div>
 
-        <div class="eyebrow">
-            PROCUREMENT PLANNING & CONTROL
+        <a class="dashboard-link" href="/">
+            Open Dashboard
+        </a>
+    </div>
+
+
+    <div class="upload-card">
+
+        <div
+            id="drop-zone"
+            class="drop-zone"
+        >
+            <h2>Analyze SAP Workbook</h2>
+
+            <p>
+                Upload an XLSB or XLSX workbook to automatically
+                discover sheets, business roles and relationships.
+            </p>
+
+            <strong>
+                Click here or drag & drop your workbook
+            </strong>
+
+            <input
+                id="file-input"
+                type="file"
+                accept=".xlsx,.xlsb"
+            >
+
+            <div
+                id="file-name"
+                class="file-name"
+            ></div>
         </div>
 
-        <h1>
-            SAP PPC Intelligence
-        </h1>
+        <div class="actions">
 
-        <p class="subtitle">
-            Upload your SAP procurement report to generate
-            inventory, procurement, supplier and forecast intelligence.
-        </p>
+            <button
+                id="analyze-button"
+                class="primary"
+                disabled
+            >
+                Analyze Workbook
+            </button>
 
+            <button
+                id="clear-button"
+                class="secondary"
+            >
+                Clear
+            </button>
 
-        <form id="upload-form">
-
-            <div class="upload-box">
-
-                <input
-                    id="file"
-                    type="file"
-                    name="file"
-                    accept=".xlsx,.xlsb,.csv,.parquet"
-                    required
-                >
-
-                <button
-                    id="process-button"
-                    type="submit"
-                >
-                    Process Report
-                </button>
-
-            </div>
-
-        </form>
-
+        </div>
 
         <div
             id="status"
             class="status"
-        >
-            Supported formats: XLSX, XLSB, CSV, Parquet
+        ></div>
+
+    </div>
+
+
+    <div id="results">
+
+        <!-- WORKBOOK SUMMARY -->
+
+        <div class="summary-grid">
+
+            <div class="metric">
+                <div class="metric-label">
+                    Workbook
+                </div>
+
+                <div
+                    id="workbook-name"
+                    class="metric-value"
+                >
+                    -
+                </div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">
+                    Sheets
+                </div>
+
+                <div
+                    id="sheet-count"
+                    class="metric-value"
+                >
+                    -
+                </div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">
+                    Primary Dataset
+                </div>
+
+                <div
+                    id="primary-sheet"
+                    class="metric-value"
+                >
+                    -
+                </div>
+            </div>
+
+            <div class="metric">
+                <div class="metric-label">
+                    Integrated Rows
+                </div>
+
+                <div
+                    id="integrated-rows"
+                    class="metric-value"
+                >
+                    -
+                </div>
+            </div>
+
         </div>
 
-    </main>
+
+        <!-- SHEET CLASSIFICATION -->
+
+        <div class="section">
+
+            <h2>Sheet Classification</h2>
+
+            <div
+                id="classification-grid"
+                class="sheet-grid"
+            ></div>
+
+        </div>
 
 
-    <script>
+        <!-- RELATIONSHIPS -->
 
-        const form =
-            document.getElementById("upload-form");
+        <div class="section">
 
-        const fileInput =
-            document.getElementById("file");
+            <h2>Detected Relationships</h2>
 
-        const button =
-            document.getElementById("process-button");
+            <div id="relationships"></div>
 
-        const status =
-            document.getElementById("status");
+        </div>
 
 
-        form.addEventListener(
-            "submit",
-            async (event) => {
+        <!-- INTEGRATION -->
 
-                event.preventDefault();
+        <div class="section">
 
-                const file =
-                    fileInput.files[0];
+            <h2>Integration Plan</h2>
 
-                if (!file) {
-                    status.textContent =
-                        "Please select a file.";
+            <table class="integration-table">
 
-                    status.classList.add("error");
+                <thead>
+                    <tr>
+                        <th>Sheet</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                    </tr>
+                </thead>
 
-                    return;
-                }
+                <tbody
+                    id="integration-table"
+                ></tbody>
 
+            </table>
 
-                const formData =
-                    new FormData();
+        </div>
 
-                formData.append(
-                    "file",
-                    file
-                );
+    </div>
 
-
-                button.disabled = true;
-
-                button.textContent =
-                    "Processing report...";
-
-                status.classList.remove("error");
-
-                status.textContent =
-                    "Cleaning, transforming and analyzing your SAP report...";
+</div>
 
 
-                try {
+<script>
 
-                    const response =
-                        await fetch(
-                            "/api/process",
-                            {
-                                method: "POST",
-                                body: formData,
-                            }
-                        );
+const fileInput =
+    document.getElementById("file-input");
 
+const dropZone =
+    document.getElementById("drop-zone");
 
-                    const result =
-                        await response.json();
+const fileName =
+    document.getElementById("file-name");
 
+const analyzeButton =
+    document.getElementById("analyze-button");
 
-                    if (!response.ok ||
-                        !result.success) {
+const clearButton =
+    document.getElementById("clear-button");
 
-                        throw new Error(
-                            result.message ||
-                            "Processing failed."
-                        );
+const status =
+    document.getElementById("status");
 
-                    }
+const results =
+    document.getElementById("results");
 
-
-                    status.textContent =
-                        "Processing completed. Opening dashboard...";
+let selectedFile = null;
 
 
-                    window.location.href =
-                        result.redirect || "/";
+dropZone.addEventListener(
+    "click",
+    () => fileInput.click()
+);
 
-                } catch (error) {
 
-                    console.error(error);
+fileInput.addEventListener(
+    "change",
+    event => {
 
-                    status.textContent =
-                        error.message ||
-                        "Unable to process the report.";
+        const file =
+            event.target.files[0];
 
-                    status.classList.add("error");
+        selectFile(file);
+    }
+);
 
-                    button.disabled = false;
 
-                    button.textContent =
-                        "Process Report";
-                }
+dropZone.addEventListener(
+    "dragover",
+    event => {
 
-            }
+        event.preventDefault();
+
+        dropZone.classList.add(
+            "active"
+        );
+    }
+);
+
+
+dropZone.addEventListener(
+    "dragleave",
+    () => {
+
+        dropZone.classList.remove(
+            "active"
+        );
+    }
+);
+
+
+dropZone.addEventListener(
+    "drop",
+    event => {
+
+        event.preventDefault();
+
+        dropZone.classList.remove(
+            "active"
         );
 
-    </script>
+        const file =
+            event.dataTransfer.files[0];
+
+        selectFile(file);
+    }
+);
+
+
+function selectFile(file) {
+
+    if (!file) {
+        return;
+    }
+
+    const extension =
+        file.name
+            .split(".")
+            .pop()
+            .toLowerCase();
+
+    if (
+        extension !== "xlsx" &&
+        extension !== "xlsb"
+    ) {
+
+        showStatus(
+            "Please select an XLSX or XLSB workbook.",
+            "error"
+        );
+
+        return;
+    }
+
+    selectedFile = file;
+
+    fileName.textContent =
+        `Selected: ${file.name}`;
+
+    analyzeButton.disabled = false;
+
+    results.style.display = "none";
+
+    showStatus(
+        "Workbook ready for analysis.",
+        "success"
+    );
+}
+
+
+analyzeButton.addEventListener(
+    "click",
+    analyzeWorkbook
+);
+
+
+async function analyzeWorkbook() {
+
+    if (!selectedFile) {
+        return;
+    }
+
+    analyzeButton.disabled = true;
+
+    showStatus(
+        "Analyzing workbook. Discovering sheets, relationships and integration plan...",
+        "loading"
+    );
+
+    const formData =
+        new FormData();
+
+    formData.append(
+        "file",
+        selectedFile
+    );
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/workbook/analyze",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok || !data.success) {
+
+            throw new Error(
+                data.message ||
+                "Workbook analysis failed."
+            );
+        }
+
+        renderResults(data);
+
+        showStatus(
+            "Workbook analyzed successfully.",
+            "success"
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        showStatus(
+            error.message,
+            "error"
+        );
+
+    } finally {
+
+        analyzeButton.disabled = false;
+    }
+}
+
+
+function renderResults(data) {
+
+    const workbook =
+        data.workbook;
+
+    const classifications =
+        data.classifications || [];
+
+    const relationships =
+        data.relationships || [];
+
+    const plan =
+        data.integration_plan || {};
+
+    const integration =
+        data.integration_result || {};
+
+
+    document.getElementById(
+        "workbook-name"
+    ).textContent =
+        workbook.file_name || "-";
+
+
+    document.getElementById(
+        "sheet-count"
+    ).textContent =
+        workbook.sheet_count ?? 0;
+
+
+    document.getElementById(
+        "primary-sheet"
+    ).textContent =
+        plan.primary_sheet || "-";
+
+
+    document.getElementById(
+        "integrated-rows"
+    ).textContent =
+        integration.rows ?? 0;
+
+
+    renderClassifications(
+        classifications
+    );
+
+    renderRelationships(
+        relationships
+    );
+
+    renderIntegration(
+        plan.sheets || []
+    );
+
+
+    results.style.display =
+        "block";
+}
+
+
+function renderClassifications(
+    classifications
+) {
+
+    const container =
+        document.getElementById(
+            "classification-grid"
+        );
+
+    if (!classifications.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No classifications available.
+             </div>`;
+
+        return;
+    }
+
+    container.innerHTML =
+        classifications
+            .map(item => `
+                <div class="sheet">
+
+                    <div class="sheet-header">
+
+                        <div class="sheet-name">
+                            ${escapeHtml(
+                                item.sheet_name
+                            )}
+                        </div>
+
+                        <span class="badge">
+                            ${escapeHtml(
+                                item.relevance
+                            )}
+                        </span>
+
+                    </div>
+
+                    <div class="sheet-meta">
+
+                        <strong>
+                            ${escapeHtml(
+                                item.role
+                            )}
+                        </strong>
+
+                        <br>
+
+                        ${escapeHtml(
+                            item.purpose
+                        )}
+
+                        <br><br>
+
+                        Score:
+                        ${item.score ?? 0}
+
+                    </div>
+
+                </div>
+            `)
+            .join("");
+}
+
+
+function renderRelationships(
+    relationships
+) {
+
+    const container =
+        document.getElementById(
+            "relationships"
+        );
+
+    if (!relationships.length) {
+
+        container.innerHTML =
+            `<div class="empty">
+                No relationships detected.
+             </div>`;
+
+        return;
+    }
+
+    container.innerHTML =
+        relationships
+            .slice(0, 30)
+            .map(item => `
+                <div class="join">
+
+                    <div class="join-key">
+
+                        ${escapeHtml(
+                            item.left_sheet
+                        )}
+                        .
+                        ${escapeHtml(
+                            item.left_column
+                        )}
+
+                        ↔
+
+                        ${escapeHtml(
+                            item.right_sheet
+                        )}
+                        .
+                        ${escapeHtml(
+                            item.right_column
+                        )}
+
+                    </div>
+
+                    <div class="join-confidence">
+
+                        Key:
+                        ${escapeHtml(
+                            item.key_type
+                        )}
+
+                        · Confidence:
+                        ${item.confidence ?? 0}%
+
+                    </div>
+
+                </div>
+            `)
+            .join("");
+}
+
+
+function renderIntegration(
+    sheets
+) {
+
+    const tbody =
+        document.getElementById(
+            "integration-table"
+        );
+
+    tbody.innerHTML =
+        sheets
+            .map(item => `
+
+                <tr>
+
+                    <td>
+                        ${escapeHtml(
+                            item.sheet_name
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHtml(
+                            item.role
+                        )}
+                    </td>
+
+                    <td class="${
+                        item.selected
+                            ? "selected"
+                            : "not-selected"
+                    }">
+
+                        ${
+                            item.selected
+                                ? "Included"
+                                : "Excluded"
+                        }
+
+                    </td>
+
+                    <td>
+                        ${item.priority ?? 0}
+                    </td>
+
+                </tr>
+
+            `)
+            .join("");
+}
+
+
+function clearAll() {
+
+    selectedFile = null;
+
+    fileInput.value = "";
+
+    fileName.textContent = "";
+
+    analyzeButton.disabled = true;
+
+    results.style.display = "none";
+
+    status.className = "status";
+
+    status.textContent = "";
+}
+
+
+clearButton.addEventListener(
+    "click",
+    clearAll
+);
+
+
+function showStatus(
+    message,
+    type
+) {
+
+    status.textContent =
+        message;
+
+    status.className =
+        `status show ${type}`;
+}
+
+
+function escapeHtml(value) {
+
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+</script>
 
 </body>
-
 </html>

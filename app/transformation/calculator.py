@@ -20,14 +20,28 @@ class BusinessCalculator:
             "current_stock",
             "monthly_requirement",
         ):
+            current_stock = pl.col(
+                "current_stock"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
+            monthly_requirement = pl.col(
+                "monthly_requirement"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
             expressions.append(
                 pl.when(
-                    pl.col("monthly_requirement") > 0
+                    monthly_requirement > 0
                 )
                 .then(
                     (
-                        pl.col("current_stock")
-                        / pl.col("monthly_requirement")
+                        current_stock
+                        / monthly_requirement
                     ).round(2)
                 )
                 .otherwise(None)
@@ -42,10 +56,24 @@ class BusinessCalculator:
             "monthly_requirement",
             "current_stock",
         ):
+            monthly_requirement = pl.col(
+                "monthly_requirement"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
+            current_stock = pl.col(
+                "current_stock"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
             expressions.append(
                 (
-                    pl.col("monthly_requirement")
-                    - pl.col("current_stock")
+                    monthly_requirement
+                    - current_stock
                 )
                 .clip(lower_bound=0)
                 .alias("calculated_shortfall")
@@ -59,10 +87,24 @@ class BusinessCalculator:
             "current_stock",
             "unit_price",
         ):
+            current_stock = pl.col(
+                "current_stock"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
+            unit_price = pl.col(
+                "unit_price"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
             expressions.append(
                 (
-                    pl.col("current_stock")
-                    * pl.col("unit_price")
+                    current_stock
+                    * unit_price
                 )
                 .round(2)
                 .alias("calculated_inventory_value")
@@ -75,12 +117,23 @@ class BusinessCalculator:
             df,
             "shortfall_quantity",
         ):
+            shortfall_quantity = pl.col(
+                "shortfall_quantity"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
             expressions.append(
                 pl.when(
-                    pl.col("shortfall_quantity") > 0
+                    shortfall_quantity > 0
                 )
-                .then(pl.lit("Shortfall"))
-                .otherwise(pl.lit("No Shortfall"))
+                .then(
+                    pl.lit("Shortfall")
+                )
+                .otherwise(
+                    pl.lit("No Shortfall")
+                )
                 .alias("shortfall_status")
             )
 
@@ -91,24 +144,50 @@ class BusinessCalculator:
             df,
             "coverage",
         ):
+            # SAP/Excel may provide coverage as:
+            #
+            #     1.5
+            #     "1.5"
+            #     "6"
+            #     ""
+            #     "N/A"
+            #
+            # Convert safely to Float64 before comparing.
+            coverage = pl.col(
+                "coverage"
+            ).cast(
+                pl.Float64,
+                strict=False,
+            )
+
             expressions.append(
                 pl.when(
-                    pl.col("coverage").is_null()
+                    coverage.is_null()
                 )
-                .then(pl.lit("Unknown"))
+                .then(
+                    pl.lit("Unknown")
+                )
                 .when(
-                    pl.col("coverage") < 1
+                    coverage < 1
                 )
-                .then(pl.lit("Critical"))
+                .then(
+                    pl.lit("Critical")
+                )
                 .when(
-                    pl.col("coverage") < 2
+                    coverage < 2
                 )
-                .then(pl.lit("Low"))
+                .then(
+                    pl.lit("Low")
+                )
                 .when(
-                    pl.col("coverage") <= 6
+                    coverage <= 6
                 )
-                .then(pl.lit("Healthy"))
-                .otherwise(pl.lit("Excess"))
+                .then(
+                    pl.lit("Healthy")
+                )
+                .otherwise(
+                    pl.lit("Excess")
+                )
                 .alias("coverage_status")
             )
 
@@ -125,6 +204,8 @@ class BusinessCalculator:
         df: pl.DataFrame,
         *columns: str,
     ) -> bool:
+        """Return True when all requested columns exist."""
+
         return all(
             column in df.columns
             for column in columns
