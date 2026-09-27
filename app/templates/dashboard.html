@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>SAP PPC Intelligence</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/dashboard.css') }}"
+    >
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- =========================================================
+         SIDEBAR
+    ========================================================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+            <div class="brand-mark">SP</div>
+
+            <div>
+                <h1>SAP PPC</h1>
+                <span>Intelligence</span>
+            </div>
+        </div>
+
+        <nav class="navigation">
+
+            <a href="#overview" class="nav-item active">
+                <span>▦</span>
+                Overview
+            </a>
+
+            <a href="#inventory" class="nav-item">
+                <span>◉</span>
+                Inventory
+            </a>
+
+            <a href="#procurement" class="nav-item">
+                <span>◆</span>
+                Procurement
+            </a>
+
+            <a href="#suppliers" class="nav-item">
+                <span>◎</span>
+                Suppliers
+            </a>
+
+            <a href="#forecast" class="nav-item">
+                <span>↗</span>
+                Forecast
+            </a>
+
+            <a href="#insights" class="nav-item">
+                <span>!</span>
+                Insights
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+                Pipeline connected
+            </div>
+
+            <div class="version">
+                SAP PPC Intelligence v0.1
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================================================
+         MAIN
+    ========================================================== -->
+
+    <main class="main-content">
+
+        <!-- HEADER -->
+
+        <header class="topbar">
+
+            <div>
+                <p class="eyebrow">PROCUREMENT PLANNING & CONTROL</p>
+
+                <h2>
+                    SAP PPC Intelligence
+                </h2>
+
+                <p class="subtitle">
+                    Inventory, procurement and supply-risk overview
+                </p>
+            </div>
+
+            <div class="topbar-actions">
+
+                <button
+                    class="secondary-button"
+                    onclick="window.location.href='/'"
+                >
+                    Upload Report
+                </button>
+
+                <button
+                    class="primary-button"
+                    onclick="refreshDashboard()"
+                >
+                    Refresh
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- LOADING -->
+
+        <section
+            id="loading"
+            class="loading-state"
+        >
+            <div class="loader"></div>
+            <p>Loading procurement intelligence...</p>
+        </section>
+
+
+        <!-- ERROR -->
+
+        <section
+            id="error"
+            class="error-state hidden"
+        >
+            <div class="error-icon">!</div>
+
+            <h3>Unable to load dashboard</h3>
+
+            <p id="error-message">
+                Dashboard data could not be loaded.
+            </p>
+
+            <button
+                class="primary-button"
+                onclick="refreshDashboard()"
+            >
+                Try Again
+            </button>
+        </section>
+
+
+        <!-- DASHBOARD -->
+
+        <div
+            id="dashboard"
+            class="dashboard hidden"
+        >
+
+            <!-- =================================================
+                 KPI SECTION
+            ================================================== -->
+
+            <section id="overview">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            EXECUTIVE OVERVIEW
+                        </p>
+
+                        <h3>
+                            Procurement health
+                        </h3>
+                    </div>
+
+                    <span
+                        id="last-updated"
+                        class="last-updated"
+                    >
+                    </span>
+
+                </div>
+
+
+                <div class="kpi-grid">
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-icon">
+                            #
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                Total Parts
+                            </span>
+
+                            <strong
+                                id="total-parts"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-icon">
+                            ₹
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                Inventory Value
+                            </span>
+
+                            <strong
+                                id="inventory-value"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card danger">
+
+                        <div class="kpi-icon">
+                            !
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                Critical Parts
+                            </span>
+
+                            <strong
+                                id="critical-parts"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card warning">
+
+                        <div class="kpi-icon">
+                            ↓
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                Total Shortfall
+                            </span>
+
+                            <strong
+                                id="total-shortfall"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-icon">
+                            PO
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                Open PO
+                            </span>
+
+                            <strong
+                                id="open-po"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+
+                    <article class="kpi-card">
+
+                        <div class="kpi-icon">
+                            STO
+                        </div>
+
+                        <div class="kpi-content">
+
+                            <span class="kpi-label">
+                                STO In Transit
+                            </span>
+
+                            <strong
+                                id="sto-intransit"
+                                class="kpi-value"
+                            >
+                                —
+                            </strong>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 RISK SUMMARY
+            ================================================== -->
+
+            <section class="risk-strip">
+
+                <div class="risk-item critical">
+
+                    <div class="risk-number" id="risk-critical">
+                        —
+                    </div>
+
+                    <div>
+                        <strong>Critical</strong>
+                        <span>Below 1 month coverage</span>
+                    </div>
+
+                </div>
+
+
+                <div class="risk-divider"></div>
+
+
+                <div class="risk-item low">
+
+                    <div class="risk-number" id="risk-low">
+                        —
+                    </div>
+
+                    <div>
+                        <strong>Low Coverage</strong>
+                        <span>1–2 months coverage</span>
+                    </div>
+
+                </div>
+
+
+                <div class="risk-divider"></div>
+
+
+                <div class="risk-item healthy">
+
+                    <div class="risk-number" id="risk-healthy">
+                        —
+                    </div>
+
+                    <div>
+                        <strong>Healthy</strong>
+                        <span>2–6 months coverage</span>
+                    </div>
+
+                </div>
+
+
+                <div class="risk-divider"></div>
+
+
+                <div class="risk-item excess">
+
+                    <div class="risk-number" id="risk-excess">
+                        —
+                    </div>
+
+                    <div>
+                        <strong>Excess</strong>
+                        <span>Above 6 months coverage</span>
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 INVENTORY
+            ================================================== -->
+
+            <section id="inventory">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            INVENTORY
+                        </p>
+
+                        <h3>
+                            Stock coverage
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid">
+
+                    <article class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+                                <h4>
+                                    Coverage Distribution
+                                </h4>
+
+                                <span>
+                                    Parts by stock coverage
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="coverage-chart"
+                            class="bar-chart"
+                        ></div>
+
+                    </article>
+
+
+                    <article class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+                                <h4>
+                                    Inventory by Category
+                                </h4>
+
+                                <span>
+                                    Inventory value distribution
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="category-chart"
+                            class="bar-chart"
+                        ></div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 PROCUREMENT
+            ================================================== -->
+
+            <section id="procurement">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            PROCUREMENT
+                        </p>
+
+                        <h3>
+                            Supply risk
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <div class="chart-grid">
+
+                    <article class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+                                <h4>
+                                    Supplier Shortfall
+                                </h4>
+
+                                <span>
+                                    Suppliers contributing to shortage
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="supplier-chart"
+                            class="bar-chart"
+                        ></div>
+
+                    </article>
+
+
+                    <article class="panel">
+
+                        <div class="panel-header">
+
+                            <div>
+                                <h4>
+                                    Priority Distribution
+                                </h4>
+
+                                <span>
+                                    Procurement priority levels
+                                </span>
+                            </div>
+
+                        </div>
+
+                        <div
+                            id="priority-chart"
+                            class="bar-chart"
+                        ></div>
+
+                    </article>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+                 SUPPLIERS
+            ================================================== -->
+
+            <section id="suppliers">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            SUPPLIERS
+                        </p>
+
+                        <h3>
+                            Supplier performance
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <article class="panel table-panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <h4>
+                                Supplier Risk Overview
+                            </h4>
+
+                            <span>
+                                Procurement exposure by supplier
+                            </span>
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Supplier</th>
+                                    <th>Parts</th>
+                                    <th>Requirement</th>
+                                    <th>Shortfall</th>
+                                    <th>Inventory</th>
+                                    <th>Open PO</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="supplier-table">
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 FORECAST
+            ================================================== -->
+
+            <section id="forecast">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            FORECAST
+                        </p>
+
+                        <h3>
+                            Demand outlook
+                        </h3>
+                    </div>
+
+                </div>
+
+
+                <article class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <h4>
+                                Monthly Forecast
+                            </h4>
+
+                            <span>
+                                Forecasted demand across planning horizon
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <div
+                        id="forecast-chart"
+                        class="forecast-chart"
+                    ></div>
+
+                </article>
+
+            </section>
+
+
+            <!-- =================================================
+                 INSIGHTS
+            ================================================== -->
+
+            <section id="insights">
+
+                <div class="section-heading">
+
+                    <div>
+                        <p class="section-label">
+                            INTELLIGENCE
+                        </p>
+
+                        <h3>
+                            Business insights
+                        </h3>
+                    </div>
+
+                    <div
+                        id="insight-count"
+                        class="insight-count"
+                    >
+                    </div>
+
+                </div>
+
+
+                <div
+                    id="insight-grid"
+                    class="insight-grid"
+                >
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<script
+    src="{{ url_for('static', filename='js/dashboard.js') }}"
+></script>
+
+</body>
+</html>
