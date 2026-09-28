@@ -383,159 +383,177 @@ function renderDashboard(data) {
    KPI CARDS
    ========================================================= */
 
-function renderKpis(kpis) {
-
-    const container =
-        document.getElementById(
-            "kpi-grid"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    const cards = [
-        {
-            label: "Total Requirement",
-            value: findValue(
-                kpis,
-                [
-                    "total_requirement",
-                    "total_requirements",
-                    "requirement",
-                ]
-            ),
-            meta: "Current planning requirement",
-        },
-
-        {
-            label: "Current Inventory",
-            value: findValue(
-                kpis,
-                [
-                    "current_stock",
-                    "total_stock",
-                    "inventory",
-                ]
-            ),
-            meta: "Available stock",
-        },
-
-        {
-            label: "Total Shortfall",
-            value: findValue(
-                kpis,
-                [
-                    "total_shortfall",
-                    "shortfall",
-                ]
-            ),
-            meta: "Requirement not covered",
-        },
-
-        {
-            label: "Open PO",
-            value: findValue(
-                kpis,
-                [
-                    "open_po",
-                    "open_purchase_orders",
-                    "total_open_po",
-                ]
-            ),
-            meta: "Open purchase orders",
-        },
-
-        {
-            label: "Open STO",
-            value: findValue(
-                kpis,
-                [
-                    "open_sto",
-                    "open_stock_transfer_orders",
-                    "total_open_sto",
-                ]
-            ),
-            meta: "Open stock transfers",
-        },
-    ];
-
-    container.innerHTML =
-        cards.map(
-            card => `
-                <div class="kpi-card">
-
-                    <div class="kpi-label">
-                        ${escapeHtml(card.label)}
-                    </div>
-
-                    <div class="kpi-value">
-                        ${formatNumber(card.value)}
-                    </div>
-
-                    <div class="kpi-meta">
-                        ${escapeHtml(card.meta)}
-                    </div>
-
-                </div>
-            `
-        ).join("");
-}
+   function renderKpis(kpis) {
+   
+       const container =
+           document.getElementById("kpi-grid");
+   
+       if (!container) {
+           return;
+       }
+   
+       const cards = [
+           {
+               label: "Total Parts",
+               value: findValue(kpis, [
+                   "total_parts",
+                   "parts",
+                   "part_count",
+               ]),
+               meta: "Parts in current dataset",
+           },
+   
+           {
+               label: "Inventory Value",
+               value: findValue(kpis, [
+                   "total_inventory_value",
+                   "inventory_value",
+               ]),
+               meta: "Current inventory value",
+               money: true,
+           },
+   
+           {
+               label: "Monthly Requirement",
+               value: findValue(kpis, [
+                   "total_monthly_requirement",
+                   "total_requirement",
+                   "total_requirements",
+                   "requirement",
+               ]),
+               meta: "Current planning requirement",
+           },
+   
+           {
+               label: "Total Shortfall",
+               value: findValue(kpis, [
+                   "total_shortfall",
+                   "shortfall",
+               ]),
+               meta: "Requirement not covered",
+           },
+   
+           {
+               label: "Open PO",
+               value: findValue(kpis, [
+                   "total_open_po",
+                   "open_po",
+                   "open_purchase_orders",
+               ]),
+               meta: "Open purchase orders",
+           },
+   
+           {
+               label: "Open STO",
+               value: findValue(kpis, [
+                   "total_open_sto",
+                   "open_sto",
+                   "open_stock_transfer_orders",
+               ]),
+               meta: "Open stock transfers",
+           },
+       ];
+   
+       container.innerHTML =
+           cards.map(
+               card => `
+                   <div class="kpi-card">
+   
+                       <div class="kpi-label">
+                           ${escapeHtml(card.label)}
+                       </div>
+   
+                       <div class="kpi-value">
+                           ${
+                               card.money
+                                   ? formatCompactMoney(card.value)
+                                   : formatCompactNumber(card.value)
+                           }
+                       </div>
+   
+                       <div class="kpi-meta">
+                           ${escapeHtml(card.meta)}
+                       </div>
+   
+                   </div>
+               `
+           ).join("");
+   }
 
 
 /* =========================================================
    INVENTORY OVERVIEW
    ========================================================= */
 
-function renderInventoryOverview(
-    inventory
-) {
-
-    const container =
-        document.getElementById(
-            "inventory-chart"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    const data =
-        inventory.inventory_by_category ||
-        inventory.coverage_distribution ||
-        [];
-
-    if (!Array.isArray(data) || !data.length) {
-
-        renderEmpty(
-            container,
-            "No inventory distribution available."
-        );
-
-        return;
-    }
-
-    renderBarChart(
-        container,
-        data,
-        {
-            labelKeys: [
-                "category",
-                "name",
-                "label",
-                "bucket",
-            ],
-
-            valueKeys: [
-                "inventory",
-                "stock",
-                "count",
-                "value",
-                "current_stock",
-            ],
-        }
-    );
-}
+   function renderInventoryOverview(inventory) {
+   
+       const container =
+           document.getElementById(
+               "inventory-chart"
+           );
+   
+       if (!container) {
+           return;
+       }
+   
+       const coverage =
+           inventory.coverage_distribution ||
+           [];
+   
+       if (
+           Array.isArray(coverage) &&
+           coverage.length
+       ) {
+   
+           renderCoverageChart(
+               container,
+               coverage
+           );
+   
+           return;
+       }
+   
+   
+       const data =
+           inventory.inventory_by_category ||
+           [];
+   
+       if (
+           !Array.isArray(data) ||
+           !data.length
+       ) {
+   
+           renderEmpty(
+               container,
+               "No inventory distribution available."
+           );
+   
+           return;
+       }
+   
+   
+       renderBarChart(
+           container,
+           data,
+           {
+               labelKeys: [
+                   "category",
+                   "name",
+                   "label",
+               ],
+   
+               valueKeys: [
+                   "inventory",
+                   "stock",
+                   "current_stock",
+                   "value",
+                   "count",
+               ],
+   
+               limit: 7,
+           }
+       );
+   }
 
 
 /* =========================================================
@@ -629,6 +647,7 @@ function renderSupplierChart(
                         b,
                         [
                             "shortfall",
+                            "shortfall_quantity",
                             "total_shortfall",
                         ]
                     )
@@ -637,6 +656,7 @@ function renderSupplierChart(
                         a,
                         [
                             "shortfall",
+                            "shortfall_quantity",
                             "total_shortfall",
                         ]
                     )
@@ -706,6 +726,7 @@ function renderForecastChart(
             valueKeys: [
                 "requirement",
                 "total_requirement",
+                "monthly_requirement",
                 "quantity",
             ],
         }
@@ -717,78 +738,35 @@ function renderForecastChart(
    INSIGHTS
    ========================================================= */
 
-function renderInsights(
-    insights
-) {
-
-    const container =
-        document.getElementById(
-            "insights-container"
-        );
-
-    if (!container) {
-        return;
-    }
-
-    if (!Array.isArray(insights)) {
-
-        if (
-            insights &&
-            typeof insights === "object"
-        ) {
-
-            insights =
-                Object.values(insights);
-        } else {
-
-            insights = [];
-        }
-    }
-
-    if (!insights.length) {
-
-        renderEmpty(
-            container,
-            "No automated insights available."
-        );
-
-        return;
-    }
-
-    container.innerHTML =
-        insights
-            .slice(0, 6)
-            .map(
-                (item, index) => {
-
-                    const text =
-                        extractInsightText(
-                            item
-                        );
-
-                    return `
-                        <div class="insight-card">
-
-                            <h3>
-                                ${escapeHtml(
-                                    extractInsightTitle(
-                                        item,
-                                        index
-                                    )
-                                )}
-                            </h3>
-
-                            <p>
-                                ${escapeHtml(text)}
-                            </p>
-
-                        </div>
-                    `;
-                }
-            )
-            .join("");
-}
-
+   function renderInsights(insights) {
+   
+       const container =
+           document.getElementById("insights-container");
+   
+       if (!container) {
+           return;
+       }
+   
+       insights = normalizeInsights(insights);
+   
+       if (!insights.length) {
+           renderEmpty(
+               container,
+               "No automated insights available."
+           );
+   
+           return;
+       }
+   
+       container.innerHTML =
+           insights
+               .slice(0, 6)
+               .map(
+                   (item, index) =>
+                       buildInsightCard(item, index)
+               )
+               .join("");
+   }
 
 /* =========================================================
    INVENTORY PAGE
@@ -1098,89 +1076,291 @@ function renderForecastPage() {
    INSIGHTS PAGE
    ========================================================= */
 
-function renderInsightsPage() {
-
-    const container =
-        document.getElementById(
-            "insights-page"
-        );
-
-    if (!container || !dashboardData) {
-        return;
-    }
-
-    let insights =
-        dashboardData.insights ||
-        [];
-
-    if (!Array.isArray(insights)) {
-
-        if (
-            insights &&
-            typeof insights === "object"
-        ) {
-            insights =
-                Object.values(insights);
-        } else {
-            insights = [];
-        }
-    }
-
-    if (!insights.length) {
-
-        container.innerHTML =
-            `
-            <div class="empty-state">
-                No procurement insights available.
-            </div>
-            `;
-
-        return;
-    }
-
-    container.innerHTML =
-        insights
-            .map(
-                (item, index) => {
-
-                    return `
-                        <div class="data-card">
-
-                            <h3>
-                                ${escapeHtml(
-                                    extractInsightTitle(
-                                        item,
-                                        index
-                                    )
-                                )}
-                            </h3>
-
-                            <p
-                                style="
-                                    color: var(--muted);
-                                    font-size: 12px;
-                                    line-height: 1.7;
-                                "
-                            >
-                                ${escapeHtml(
-                                    extractInsightText(
-                                        item
-                                    )
-                                )}
-                            </p>
-
-                        </div>
-                    `;
-                }
-            )
-            .join("");
-}
-
+   function renderInsightsPage() {
+   
+       const container =
+           document.getElementById("insights-page");
+   
+       if (!container || !dashboardData) {
+           return;
+       }
+   
+       const insights =
+           normalizeInsights(
+               dashboardData.insights || []
+           );
+   
+       if (!insights.length) {
+   
+           container.innerHTML = `
+               <div class="empty-state">
+                   No procurement insights available.
+               </div>
+           `;
+   
+           return;
+       }
+   
+       container.innerHTML =
+           insights
+               .map(
+                   (item, index) =>
+                       buildInsightCard(
+                           item,
+                           index,
+                           true
+                       )
+               )
+               .join("");
+   }
 
 /* =========================================================
    BAR CHART
    ========================================================= */
 
+   function renderCoverageChart(
+       container,
+       data
+   ) {
+   
+       if (
+           !Array.isArray(data) ||
+           !data.length
+       ) {
+   
+           renderEmpty(
+               container,
+               "No inventory coverage data available."
+           );
+   
+           return;
+       }
+   
+   
+       const items =
+           data
+               .map(item => ({
+                   label: getValue(
+                       item,
+                       [
+                           "bucket",
+                           "coverage",
+                           "status",
+                           "label",
+                           "name",
+                       ]
+                   ),
+   
+                   value: getNumber(
+                       item,
+                       [
+                           "count",
+                           "value",
+                           "parts",
+                           "quantity",
+                       ]
+                   ),
+               }))
+               .filter(
+                   item =>
+                       item.label !== null &&
+                       item.label !== undefined
+               );
+   
+   
+       const total =
+           items.reduce(
+               (sum, item) =>
+                   sum + item.value,
+               0
+           );
+   
+   
+       if (!total) {
+   
+           renderEmpty(
+               container,
+               "Inventory coverage contains no measurable values."
+           );
+   
+           return;
+       }
+   
+   
+       const colors = [
+           "#dc2626",
+           "#f59e0b",
+           "#16a34a",
+           "#64748b",
+           "#2563eb",
+       ];
+   
+   
+       const size = 180;
+       const center = size / 2;
+       const radius = 62;
+   
+       const circumference =
+           2 * Math.PI * radius;
+   
+       let offset = 0;
+   
+   
+       const segments =
+           items.map(
+               (item, index) => {
+   
+                   const length =
+                       (
+                           item.value /
+                           total
+                       ) * circumference;
+   
+   
+                   const segment = `
+                       <circle
+                           cx="${center}"
+                           cy="${center}"
+                           r="${radius}"
+                           fill="none"
+                           stroke="${
+                               colors[
+                                   index %
+                                   colors.length
+                               ]
+                           }"
+                           stroke-width="28"
+                           stroke-dasharray="
+                               ${length}
+                               ${circumference - length}
+                           "
+                           stroke-dashoffset="${-offset}"
+                           transform="
+                               rotate(
+                                   -90
+                                   ${center}
+                                   ${center}
+                               )
+                           "
+                       />
+                   `;
+   
+   
+                   offset += length;
+   
+                   return segment;
+               }
+           )
+           .join("");
+   
+   
+       container.innerHTML = `
+   
+           <div class="coverage-chart">
+   
+               <div class="coverage-donut">
+   
+                   <svg
+                       viewBox="0 0 ${size} ${size}"
+                       class="dashboard-donut"
+                   >
+   
+                       <circle
+                           cx="${center}"
+                           cy="${center}"
+                           r="${radius}"
+                           fill="none"
+                           stroke="#eef2f7"
+                           stroke-width="28"
+                       />
+   
+                       ${segments}
+   
+   
+                       <text
+                           x="${center}"
+                           y="${center - 3}"
+                           text-anchor="middle"
+                           class="donut-total"
+                       >
+                           ${formatCompactNumber(total)}
+                       </text>
+   
+   
+                       <text
+                           x="${center}"
+                           y="${center + 17}"
+                           text-anchor="middle"
+                           class="donut-label"
+                       >
+                           parts
+                       </text>
+   
+                   </svg>
+   
+               </div>
+   
+   
+               <div class="coverage-legend">
+   
+                   ${
+                       items.map(
+                           (item, index) => {
+   
+                               const percentage =
+                                   (
+                                       item.value /
+                                       total
+                                   ) * 100;
+   
+                               return `
+                                   <div
+                                       class="legend-row"
+                                   >
+   
+                                       <span
+                                           class="legend-dot"
+                                           style="
+                                               background:
+                                               ${
+                                                   colors[
+                                                       index %
+                                                       colors.length
+                                                   ]
+                                               };
+                                           "
+                                       ></span>
+   
+                                       <span
+                                           class="legend-name"
+                                       >
+                                           ${escapeHtml(
+                                               item.label
+                                           )}
+                                       </span>
+   
+                                       <strong>
+                                           ${formatCompactNumber(
+                                               item.value
+                                           )}
+                                       </strong>
+   
+                                       <small>
+                                           ${percentage.toFixed(1)}%
+                                       </small>
+   
+                                   </div>
+                               `;
+                           }
+                       ).join("")
+                   }
+   
+               </div>
+   
+           </div>
+       `;
+   }
+   
 function renderBarChart(
     container,
     data,
@@ -1691,6 +1871,44 @@ function getNumber(
         : 0;
 }
 
+function formatCompactNumber(value) {
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "0";
+    }
+
+    return new Intl.NumberFormat(
+        "en-IN",
+        {
+            notation: "compact",
+            maximumFractionDigits: 1,
+        }
+    ).format(number);
+}
+
+
+function formatCompactMoney(value) {
+
+    const number = Number(value);
+
+    if (!Number.isFinite(number)) {
+        return "₹0";
+    }
+
+    return (
+        "₹" +
+        new Intl.NumberFormat(
+            "en-IN",
+            {
+                notation: "compact",
+                maximumFractionDigits: 1,
+            }
+        ).format(number)
+    );
+}
+
 
 function formatNumber(
     value
@@ -1736,44 +1954,181 @@ function formatCell(
     );
 }
 
+function normalizeInsights(insights) {
+
+    if (Array.isArray(insights)) {
+        return insights.filter(Boolean);
+    }
+
+    if (
+        insights &&
+        typeof insights === "object"
+    ) {
+        return Object.values(insights).filter(Boolean);
+    }
+
+    return [];
+}
+
+
+function buildInsightCard(
+    item,
+    index = 0,
+    detailed = false
+) {
+
+    const severity =
+        String(
+            item?.severity ||
+            item?.level ||
+            "info"
+        ).toLowerCase();
+
+    const safeSeverity =
+        [
+            "critical",
+            "warning",
+            "info",
+            "success"
+        ].includes(severity)
+            ? severity
+            : "info";
+
+    const title =
+        extractInsightTitle(
+            item,
+            index
+        );
+
+    const description =
+        extractInsightText(item);
+
+    const affected =
+        getNumber(
+            item,
+            [
+                "affected_records",
+                "affected",
+                "records",
+                "count",
+            ]
+        );
+
+    const rule =
+        item?.rule_id ||
+        item?.rule ||
+        "";
+
+    const severityLabel =
+        safeSeverity === "critical"
+            ? "Critical"
+            : safeSeverity === "warning"
+                ? "Warning"
+                : safeSeverity === "success"
+                    ? "Resolved"
+                    : "Information";
+
+    return `
+        <article
+            class="
+                insight-card
+                insight-${safeSeverity}
+                ${detailed ? "insight-card-detailed" : ""}
+            "
+        >
+
+            <div class="insight-card-top">
+
+                <span class="insight-severity">
+
+                    <span
+                        class="insight-severity-dot"
+                    ></span>
+
+                    ${severityLabel}
+
+                </span>
+
+                ${
+                    rule
+                        ? `
+                            <span class="insight-rule">
+                                ${escapeHtml(rule)}
+                            </span>
+                        `
+                        : ""
+                }
+
+            </div>
+
+
+            <h3>
+                ${escapeHtml(title)}
+            </h3>
+
+
+            <p>
+                ${escapeHtml(description)}
+            </p>
+
+
+            ${
+                affected
+                    ? `
+                        <div class="insight-footer">
+
+                            <span>
+                                Affected records
+                            </span>
+
+                            <strong>
+                                ${formatCompactNumber(
+                                    affected
+                                )}
+                            </strong>
+
+                        </div>
+                    `
+                    : ""
+            }
+
+        </article>
+    `;
+}
+
 
 function extractInsightTitle(
     item,
     index = 0
 ) {
 
-    if (
-        typeof item === "string"
-    ) {
+    if (typeof item === "string") {
         return `Insight ${index + 1}`;
     }
 
     return (
-        item.title ||
-        item.name ||
-        item.type ||
+        item?.title ||
+        item?.name ||
+        item?.type ||
+        item?.rule_id ||
         `Insight ${index + 1}`
     );
 }
 
 
-function extractInsightText(
-    item
-) {
+function extractInsightText(item) {
 
-    if (
-        typeof item === "string"
-    ) {
+    if (typeof item === "string") {
         return item;
     }
 
     return (
-        item.message ||
-        item.description ||
-        item.insight ||
-        item.text ||
-        item.recommendation ||
-        JSON.stringify(item)
+        item?.description ||
+        item?.message ||
+        item?.insight ||
+        item?.text ||
+        item?.recommendation ||
+        "No description available."
     );
 }
 

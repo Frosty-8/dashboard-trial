@@ -291,7 +291,7 @@ button {
 .kpi-grid {
     display: grid;
     grid-template-columns:
-        repeat(5, minmax(0, 1fr));
+        repeat(6, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 20px;
 }
@@ -368,6 +368,7 @@ button {
     font-size: 11px;
 }
 
+
 .chart-container {
     min-height: 210px;
 }
@@ -377,9 +378,154 @@ button {
     height: 230px;
 }
 
+/* =========================================================
+   CUSTOM DASHBOARD CHARTS
+   ========================================================= */
+
+.chart-svg-wrap {
+    width: 100%;
+    min-height: 210px;
+    overflow: hidden;
+}
+
+.dashboard-svg-chart {
+    display: block;
+    width: 100%;
+    height: 230px;
+}
+
+.chart-label {
+    fill: var(--muted);
+    font-size: 10px;
+    font-family: inherit;
+}
+
+.chart-value {
+    fill: var(--text);
+    font-size: 10px;
+    font-weight: 700;
+    font-family: inherit;
+}
+
+.chart-track {
+    fill: #eef2f7;
+}
+
+.chart-bar {
+    fill: var(--primary);
+    transition: opacity 0.2s ease;
+}
+
+.chart-bar:hover {
+    opacity: 0.75;
+}
+
+.chart-axis {
+    stroke: var(--border);
+    stroke-width: 1;
+}
+
+.chart-line {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.chart-area {
+    fill: var(--primary-soft);
+    opacity: 0.7;
+}
+
+.chart-point {
+    fill: white;
+    stroke: var(--primary);
+    stroke-width: 2;
+}
+
+.chart-point:hover {
+    r: 6;
+}
+
+
 .chart-container canvas {
     max-width: 100%;
 }
+
+/* =========================================================
+   INVENTORY COVERAGE
+   ========================================================= */
+
+.coverage-chart {
+    min-height: 210px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.coverage-donut {
+    width: 180px;
+    min-width: 180px;
+    height: 180px;
+}
+
+.dashboard-donut {
+    width: 100%;
+    height: 100%;
+}
+
+.donut-total {
+    fill: var(--text);
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.donut-label {
+    fill: var(--muted);
+    font-size: 10px;
+}
+
+.coverage-legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    min-width: 150px;
+}
+
+.legend-row {
+    display: grid;
+    grid-template-columns: 9px 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-name {
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.legend-row strong {
+    font-size: 11px;
+}
+
+.legend-row small {
+    color: var(--muted);
+    min-width: 42px;
+    text-align: right;
+}
+
 
 .ai-badge {
     padding: 5px 8px;
@@ -404,26 +550,173 @@ button {
     display: grid;
     grid-template-columns:
         repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
 }
 
 .insight-card {
-    padding: 14px;
-    border-radius: 9px;
+    position: relative;
+    padding: 16px;
+    border-radius: 11px;
     background: var(--surface-soft);
     border: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.insight-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--primary);
 }
 
 .insight-card h3 {
-    margin: 0 0 6px;
-    font-size: 12px;
+    margin: 12px 0 7px;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 .insight-card p {
     margin: 0;
     color: var(--muted);
-    line-height: 1.5;
+    line-height: 1.6;
     font-size: 11px;
+}
+
+.insight-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.insight-severity {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.insight-severity-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.insight-rule {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 8px;
+    font-weight: 700;
+}
+
+.insight-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.insight-footer strong {
+    color: var(--text);
+    font-size: 11px;
+}
+
+
+/* CRITICAL */
+
+.insight-critical {
+    background: var(--danger-soft);
+    border-color: #fecaca;
+}
+
+.insight-critical::before {
+    background: var(--danger);
+}
+
+.insight-critical .insight-severity {
+    color: var(--danger);
+    background: #fee2e2;
+}
+
+
+/* WARNING */
+
+.insight-warning {
+    background: var(--warning-soft);
+    border-color: #fde68a;
+}
+
+.insight-warning::before {
+    background: var(--warning);
+}
+
+.insight-warning .insight-severity {
+    color: var(--warning);
+    background: #fef3c7;
+}
+
+
+/* INFO */
+
+.insight-info {
+    background: var(--primary-soft);
+    border-color: #bfdbfe;
+}
+
+.insight-info::before {
+    background: var(--primary);
+}
+
+.insight-info .insight-severity {
+    color: var(--primary);
+    background: #dbeafe;
+}
+
+
+/* SUCCESS */
+
+.insight-success {
+    background: var(--success-soft);
+    border-color: #a7f3d0;
+}
+
+.insight-success::before {
+    background: var(--success);
+}
+
+.insight-success .insight-severity {
+    color: var(--success);
+    background: #d1fae5;
+}
+
+
+/* FULL INSIGHTS PAGE */
+
+.insight-card-detailed {
+    padding: 20px;
+}
+
+.insight-card-detailed h3 {
+    font-size: 15px;
+}
+
+.insight-card-detailed p {
+    font-size: 12px;
+    line-height: 1.7;
 }
 
 
@@ -535,6 +828,10 @@ button {
     .kpi-grid {
         grid-template-columns:
             repeat(3, minmax(0, 1fr));
+    }
+
+    .coverage-chart {
+        gap: 18px;
     }
 
     .chart-grid {

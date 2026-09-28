@@ -7,14 +7,13 @@ from flask import Blueprint, jsonify, request
 
 from app.config import PROCESSED_DIR, UPLOAD_DIR
 from app.pipeline import PPCPipeline
-from app.ingestion import WorkbookProfiler
 
 from app.ingestion import (
     RelationshipDetector,
     SheetClassifier,
     WorkbookIntegrationPlanner,
     WorkbookIntegrator,
-    WorkbookProfiler,
+    WorkbookProfiler
 )
 
 api_bp = Blueprint(
@@ -199,24 +198,32 @@ def analyze_workbook():
         )
 
         # 4. Build integration plan
+        # 4. Build integration plan
         planner = WorkbookIntegrationPlanner()
-
+        
         integration_plan = planner.build(
             workbook=workbook,
             classifications=classifications,
             relationships=relationships,
         )
-
+        
         # 5. Integrate selected sheets
         integrator = WorkbookIntegrator()
-
+        
         integration_result = integrator.integrate(
             file_path=destination,
             plan=integration_plan,
         )
-
+        
+        # 6. Save canonical dataset
+        PROCESSED_DIR.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        
         canonical_path = (
-            PROCESSED_DIR / "canonical_procurement.parquet"
+            PROCESSED_DIR
+            / "canonical_procurement.parquet"
         )
         
         integration_result.dataframe.write_parquet(

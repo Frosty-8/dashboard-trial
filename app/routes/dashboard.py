@@ -67,7 +67,6 @@ def load_processed_data():
 
     
 
-    reader = ExcelReader()
     cleaner = DataCleaner()
     mapper = BusinessMapper()
     calculator = BusinessCalculator()
@@ -76,13 +75,13 @@ def load_processed_data():
     
         df = pl.read_parquet(file_path)
     else:
+        reader = ExcelReader()
         df = reader.read(file_path)
 
     # ---------------------------------------------------------
     # Load
     # ---------------------------------------------------------
 
-    df = reader.read(file_path)
 
     # ---------------------------------------------------------
     # Existing transformation pipeline
@@ -219,11 +218,11 @@ def dashboard_preview():
 
     try:
 
-        reader = ExcelReader()
-
-        df = reader.read(
-            file_path
-        )
+        if file_path.suffix.lower() == ".parquet":
+            df = pl.read_parquet(file_path)
+        else:
+            reader = ExcelReader()
+            df = reader.read(file_path)
 
         total_rows = df.height
         total_columns = df.width

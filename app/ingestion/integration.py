@@ -40,11 +40,13 @@ class IntegrationPlan:
 
 class WorkbookIntegrationPlanner:
     """
-    Converts workbook classification and detected relationships
-    into a deterministic integration plan.
+    Builds a deterministic integration plan for a workbook.
 
-    This class creates a plan only.
-    It does not modify or merge the actual datasets yet.
+    Supports:
+    - Multi-sheet SAP workbooks
+    - Single-sheet workbooks
+    - Workbooks without detected relationships
+    - Workbooks without an explicitly classified primary role
     """
 
     PRIMARY_ROLES = {
@@ -88,7 +90,8 @@ class WorkbookIntegrationPlanner:
         }
 
         primary_sheet = self._select_primary_sheet(
-            classifications
+            workbook=workbook,
+            classifications=classifications,
         )
 
         integrations: list[SheetIntegration] = []
@@ -102,10 +105,16 @@ class WorkbookIntegrationPlanner:
                 or role in self.SUPPORTING_ROLES
             )
 
+            # Always keep the selected primary source.
             if classification.sheet_name == primary_sheet:
                 selected = True
 
-            if role in self.IGNORED_ROLES:
+            # Supporting/unknown sheets remain excluded unless
+            # one of them became the fallback primary source.
+            if (
+                role in self.IGNORED_ROLES
+                and classification.sheet_name != primary_sheet
+            ):
                 selected = False
 
             reason = self._selection_reason(
@@ -144,8 +153,13 @@ class WorkbookIntegrationPlanner:
 
     def _select_primary_sheet(
         self,
+        workbook: WorkbookProfile,
         classifications: list[SheetClassification],
     ) -> str | None:
+
+        # ---------------------------------------------------------
+        # 1. Normal case
+        # ---------------------------------------------------------
 
         candidates = [
             item
@@ -153,77 +167,52 @@ class WorkbookIntegrationPlanner:
             if item.role in self.PRIMARY_ROLES
         ]
 
-        if not candidates:
-            return None
+        if candidates:
+            return max(
+                candidates,
+                key=lambda item: item.score,
+            ).sheet_name
 
-        return max(
-            candidates,
-            key=lambda item: item.score,
-        ).sheet_name
+        # ---------------------------------------------------------
+        # 2. Fallback for a single-sheet workbook
+        # ---------------------------------------------------------
 
-    def _build_joins(
-        self,
-        relationships: list[ColumnMatch],
-        classification_map: dict[str, SheetClassification],
-        primary_sheet: str | None,
-    ) -> list[JoinPlan]:
+        if len(workbook.sheets) == 1:
+            return workbook.sheets[0].name
 
-        joins: list[JoinPlan] = []
+        # ---------------------------------------------------------
+        # 3. Fallback for multi-sheet workbooks where no primary
+        #    role was confidently detected.
+        # ---------------------------------------------------------
 
-        for relationship in relationships:
+        likely_sheets = [
+            sheet
+            for sheet in workbook.sheets
+            if sheet.likely_data_sheet
+        ]
 
-            left_role = classification_map.get(
-                relationship.left_sheet
+        if likely_sheets:
+            best_sheet = max(
+                likely_sheets,
+                key=lambda sheet: sheet.score,
             )
 
-            right_role = classification_map.get(
-                relationship.right_sheet
-            )
+            return best_sheet.name
 
-            if left_role is None or right_role is None:
-                continue
+        # ---------------------------------------------------------
+        # 4. Last-resort fallback.
+        #
+        # Do not fail workbook analysis merely because the
+        # classifier could not identify a semantic role.
+        # ---------------------------------------------------------
 
-            if left_role.role in self.IGNORED_ROLES:
-                continue
+        if classifications:
+            return max(
+                classifications,
+                key=lambda item: item.score,
+            ).sheet_name
 
-            if right_role.role in self.IGNORED_ROLES:
-                continue
-
-            # Prefer relationships connected to the
-            # selected primary dataset.
-            confidence = relationship.confidence
-
-            if (
-                primary_sheet is not None
-                and (
-                    relationship.left_sheet == primary_sheet
-                    or relationship.right_sheet == primary_sheet
-                )
-            ):
-                confidence = min(
-                    confidence + 10,
-                    100,
-                )
-
-            joins.append(
-                JoinPlan(
-                    left_sheet=relationship.left_sheet,
-                    left_column=relationship.left_column,
-                    right_sheet=relationship.right_sheet,
-                    right_column=relationship.right_column,
-                    key_type=relationship.key_type,
-                    confidence=round(
-                        confidence,
-                        2,
-                    ),
-                )
-            )
-
-        return sorted(
-            joins,
-            key=lambda join: join.confidence,
-            reverse=True,
-        )
+        return None
 
     def _selection_reason(
         self,
@@ -232,24 +221,74 @@ class WorkbookIntegrationPlanner:
     ) -> str:
 
         if classification.sheet_name == primary_sheet:
-            return "Selected as the primary procurement dataset."
+            return "Selected as primary source dataset."
 
-        if classification.role == "planning":
-            return "Planning data can enrich procurement requirements and demand."
+        if classification.role in self.PRIMARY_ROLES:
+            return "Selected because it contains a primary business dataset."
 
-        if classification.role == "supplier_master":
-            return "Supplier data can enrich supplier identity and reporting."
+        if classification.role in self.SUPPORTING_ROLES:
+            return (
+                f"Selected as supporting {classification.role} "
+                "data."
+            )
 
-        if classification.role == "inventory":
-            return "Inventory data can enrich stock and shortage calculations."
+        return "Excluded because it is not required for the canonical dataset."
 
-        if classification.role == "procurement":
-            return "Procurement data can enrich PR, PO, and STO information."
+    def _build_joins(
+        self,
+        relationships: list[ColumnMatch],
+        classification_map: dict[str, SheetClassification],
+        primary_sheet: str | None,
+    ) -> list[JoinPlan]:
 
-        if classification.role == "schedule":
-            return "Schedule data can enrich timing and release information."
+        if primary_sheet is None:
+            return []
 
-        if classification.role == "supporting":
-            return "Supporting data is excluded from the canonical dataset by default."
+        joins: list[JoinPlan] = []
 
-        return "Sheet requires further inspection before integration."
+        for relationship in relationships:
+
+            left = relationship.left_sheet
+            right = relationship.right_sheet
+
+            # -----------------------------------------------------
+            # Only build joins involving the primary source.
+            # This prevents unrelated supporting sheets from
+            # being blindly joined together.
+            # -----------------------------------------------------
+
+            if primary_sheet not in {
+                left,
+                right,
+            }:
+                continue
+
+            other_sheet = (
+                right
+                if left == primary_sheet
+                else left
+            )
+
+            other_classification = classification_map.get(
+                other_sheet
+            )
+
+            if other_classification is None:
+                continue
+
+            if other_classification.role in self.IGNORED_ROLES:
+                continue
+
+            joins.append(
+                JoinPlan(
+                    left_sheet=relationship.left_sheet,
+                    left_column=relationship.left_column,
+                    right_sheet=relationship.right_sheet,
+                    right_column=relationship.right_column,
+                    key_type=relationship.key_type,
+                    confidence=relationship.confidence,
+                    join_type="left",
+                )
+            )
+
+        return joins

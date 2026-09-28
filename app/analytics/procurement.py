@@ -18,26 +18,46 @@ class ProcurementAnalytics:
         required = {
             "supplier_name",
             "shortfall_quantity",
-            "open_po",
-            "open_sto",
         }
-
+    
         if not required.issubset(df.columns):
             return []
-
+    
+        # Optional procurement fields
+        optional_numeric = {
+            "open_po": 0.0,
+            "open_sto": 0.0,
+            "sto_intransit": 0.0,
+        }
+    
+        expressions: list[pl.Expr] = []
+    
+        for column, default in optional_numeric.items():
+            if column not in df.columns:
+                expressions.append(
+                    pl.lit(default).alias(column)
+                )
+    
+        if expressions:
+            df = df.with_columns(expressions)
+    
         result = (
             df.group_by("supplier_name")
             .agg(
                 pl.len().alias("parts"),
+    
                 pl.col("shortfall_quantity")
                 .sum()
                 .alias("shortfall"),
+    
                 pl.col("open_po")
                 .sum()
                 .alias("open_po"),
+    
                 pl.col("open_sto")
                 .sum()
                 .alias("open_sto"),
+    
                 pl.col("sto_intransit")
                 .sum()
                 .alias("sto_intransit"),
@@ -48,7 +68,7 @@ class ProcurementAnalytics:
             )
             .head(limit)
         )
-
+    
         return result.to_dicts()
 
     def priority_distribution(
